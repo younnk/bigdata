@@ -1,0 +1,173 @@
+# 문제 1번 ==== 
+
+train = read.csv("data/exam2-1_train.csv")
+test = read.csv("data/exam2-1_test.csv")
+y_test = read.csv("data/exam2-1_y_test.csv")
+
+
+# 풀이
+# 1. 라이브러리 및 데이터 확인 ----
+library(dplyr)        # 데이터 전처리
+library(caret)        # 머신러닝 모델링 및 성능평가
+library(randomForest) # 랜덤포레스트 모델링
+
+
+# 2. 데이터 탐색(EDA) ----
+
+# 초기 데이터 확인
+print(train %>% head(3))
+print(test %>% head(3))
+
+# 데이터의 행/열 확인
+print(train %>% dim())
+print(test %>% dim())
+
+# 데이터 구조 확인(변수명과 데이터 타입, 행/열 등)
+print(train %>% str())
+print(test %>% str())
+
+# 결측치 확인
+print(colSums(is.na(train)))
+print(colSums(is.na(test)))
+
+
+# train 과 test 데이터의 기초통계량(독립변수)을 잘 비교해보세요. 
+print(train %>% summary())  
+print(test %>% summary())
+
+# y데이터(종속변수)도 구체적으로 살펴보세요. 
+print(train$target %>% table())
+
+
+# 3. 데이터 전처리 및 분리 ----
+
+# 1) 결측치, 2) 이상치, 3) 변수 처리하기
+
+# 3.1 결측치 처리----
+print(sum(is.na(train)))
+print(sum(is.na(test)))
+
+print(colSums(is.na(train)))
+print(colSums(is.na(test)))
+
+# 결측치 대체
+# 대체 : ifelse(조건, 조건일 때, 아닐 때) 활용
+
+# mean radius 변수
+med_radius <- median(train$mean.radius, na.rm = TRUE)
+train$mean.radius <- ifelse(is.na(train$mean.radius), 
+                            med_radius, 
+                            train$mean.radius)
+# 대체여부 확인
+print(sum(is.na(train)))
+print(sum(is.na(test)))
+
+
+# 3.3 변수처리하기
+# no칼럼은 불필요한 변수이므로 삭제
+train = train %>% select(-no)
+test = test %>% select(-no)
+
+
+# 3.4 데이터 분리 ----
+# 데이터를 train / validation set 으로 분리 
+# (80% 훈련, 20% 검증용)
+library(caret)
+
+df = train     # 데이터 복사 
+set.seed(2023) # 랜덤시드고정
+idx <- createDataPartition(df$target, p = 0.8, list = F)
+# createDataPartition 대소문자 주의 
+
+train = df[idx, ]
+val = df[-idx, ]
+
+
+# 데이터 수 확인
+print(train %>% dim())
+print(val %>% dim())
+
+# 종속변수(y)의 비율 확인
+print(table(train$target) )
+print(table(val$target) )
+
+
+
+# 4. 모델링 및 성능평가 ----
+library(randomForest)
+
+# 랜덤포레스트 모델 사용
+# 주의 : 분류모형일 경우 y값은 범주형(factor) 이어야 함
+print(train %>% str())
+train$target = as.factor(train$target)
+val$target = as.factor(val$target)
+
+
+# 모델링 : randomForest(y~x1+x2+x3..., data = train)
+#          randomForest(y~ . , data = train)
+set.seed(2024)
+model = randomForest(target ~ ., data = train)
+print(model)
+
+
+# 모델을 사용하여 테스트 데이터 예측
+x_val = val %>% select(-target)
+
+y_pred = predict(model, newdata = x_val)
+print(y_pred %>% head())
+
+
+# 모델 성능 평가 (accuracy, AUC)
+cm = caret::confusionMatrix(y_pred, val$target)  # (예측값, 실제값)
+print(cm)
+print(cm$byClass)
+
+# AUC 구하기
+library(ModelMetrics)
+y_prob = predict(model, x_val, type = 'prob')
+y_prob %>% head(3)
+y_prob[,1] %>% head(3) # class 0일 확률(악성종양)
+y_prob[,2] %>% head(3) # class 1일 확률 
+
+# 함수 : auc(실제값, 예측값)
+AUC = auc(actual = val$target, predicted = y_prob[,2]) 
+print(AUC)
+
+
+# 실제 test 셋 평가하기
+# 모델을 사용하여 실제 test 데이터 예측
+y_pred_test = predict(model, newdata = test)
+cm = caret::confusionMatrix(as.factor(y_pred_test), 
+                            as.factor(y_test$target))  # (예측값, 실제값)
+print(cm)
+print(cm$byClass)
+
+
+
+# 5. 예측값 제출 ----
+
+# (실기시험 안내사항)
+# 답안 제출 참고
+# 아래 코드는 예시이며 변수명 등 개인별로 변경하여 활용
+# write.csv(data.frame변수,"result.csv",row.names = FALSE)
+
+
+# 모델을 사용하여 테스트 데이터 예측
+# 5.2 특정 클래스로 분류될 확률을 구할 경우 (type = 'prob')
+y_result_prob = predict(model, newdata = test, type = 'prob')
+print(y_result_prob)
+print(y_result_prob[,1])  # class 0일 확률 => 악성종양일 확률
+print(y_result_prob[,2])  # class 1일 확률
+
+
+# 5.3 csv파일 제출하기
+# data.frame 변환 : data.frame( )
+y_result = data.frame(y_result_prob[,1])
+colnames(y_result)<-c("pred")
+print(y_result %>% head())
+write.csv(y_result, "result.csv",row.names = FALSE)
+
+# ★tip : 데이터를 저장한다음 불러와서 제대로 제출했는지 확인해보자
+# write.csv(y_result, "result.csv",row.names = FALSE)
+df2 = read.csv("result.csv")
+print(df2)

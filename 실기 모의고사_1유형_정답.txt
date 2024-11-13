@@ -1,0 +1,349 @@
+# 문제1-1. ====
+# 다음은 mtcars 데이터셋이다.
+# am, gear 컬럼 값 조합에 따라 아래와 같이 3개의 그룹으로 나뉜다고 할 때
+# 3개 그룹의 mpg 표준편차를 각각 구해놓고, 3개 데이터의 범위(range) 값을 구하시오.
+# (단, 정답은 반올림하여 소수점 첫재짜리까지 구하시오)
+# 
+# 3개 그룹 : A그룹(am:1, gear:4), B그룹(am:0, gear:3), C그룹(am:0, gear:4)
+
+df = mtcars
+
+
+
+# 1-1풀이 ====
+library(dplyr)
+df = mtcars
+
+# 조건 설정
+df_a <- df %>% filter(am == 1, gear == 4)
+df_b <- df %>% filter(am == 0, gear == 3)
+df_c <- df %>% filter(am == 0, gear == 4)
+
+# 각 그룹별로 데이터 필터링
+mpg_a <- sd(df_a$mpg)
+mpg_b <- sd(df_b$mpg)
+mpg_c <- sd(df_c$mpg)
+
+print(mpg_a)
+print(mpg_b)
+print(mpg_c)
+
+# 범위 계산
+mpg_range <- mpg_a - mpg_c
+
+# 범위 출력 (반올림하여 소수점 첫째자리까지)
+print(round(mpg_range, 1))
+
+
+
+
+
+# 문제1-2. ====
+# 다음은 mtcars 데이터셋이다.
+# 5개 변수(disp, hp, drat, wt, qsec)들 중에
+# mpg 변수와 상관관계가 가장 큰 변수를 선정하고
+# 선정한 변수를 최대-최소 정규화 진행 후 값이 0.5를 초과하는 데이터의 수와
+# 선정한 변수를 z-score 표준화 진행하여 Z값이 1 을 초과하는 데이터 수를
+# 더하면 얼마가 되는지 구하시오.
+
+df = mtcars
+
+
+
+# 1-2풀이 ====
+library(dplyr)
+df = mtcars
+# 1. 상관관계가 가장 큰 변수 찾기
+df = df %>% select(mpg, disp, hp, drat, wt, qsec)
+result = cor(df)
+print(result)
+
+df_new = data.frame(result)
+print( df_new %>% abs() %>% arrange(-mpg) %>% select(mpg))
+# wt 가 상관관계가 가장 큰 변수임을 확인
+
+
+# 최대최소 정규화
+max_wt <- max(df$wt)
+min_wt <- min(df$wt)
+df <- df %>% mutate(minmax = (wt - min_wt) / (max_wt - min_wt))
+print(df)
+
+cond1 <- df %>% filter(minmax > 0.5)
+count_cond1 <- nrow(cond1)
+
+# Z-score 계산
+std_wt <- sd(df$wt)
+mean_wt <- mean(df$wt)
+df <- df %>% mutate(zscore = (wt - mean_wt) / std_wt)
+
+cond2 <- df %>% filter(zscore > 1)
+count_cond2 <- nrow(cond2)
+
+# 정답
+result = count_cond1+count_cond2
+print(result)
+
+
+
+
+
+# 문제1-3 ====
+# 다음은 시간대별로 생산된 wine의 화학조성 데이터이다.
+# 24년 1월에 생산된 wine과 24년 2월에 생산된 wine의
+# alcohol 변수 평균값 차이를 절대값으로 구하시오.
+# (단, 정답은 반올림하여 소수점 첫째자리까지 구하시오)
+
+df = read.csv("data/exam1-3.csv", row.names = 1)
+
+
+
+# 1-3풀이 ====
+library(dplyr)
+df = read.csv("data/exam1-3.csv", row.names = 1)
+# index를 변수로 가지고오고 초기화 하기
+df$time = rownames(df) 
+rownames(df) = NULL
+
+# 데이터 타입 변경
+df$time = as.POSIXct(df$time)
+
+# 24년 1월,2월 필터링
+df_1m = df %>% filter(time >= as.POSIXct('2024-01-01 00:00:00') & time <= as.POSIXct('2024-01-31 23:59:59'))
+df_2m = df %>% filter(time >= as.POSIXct('2024-02-01 00:00:00') & time <= as.POSIXct('2024-02-29 23:59:59'))
+print(df_1m)
+print(df_2m)
+
+# alcohol 평균 계산
+mean1 <- mean(df_1m$alcohol)
+mean2 <- mean(df_2m$alcohol)
+
+print(round(abs(mean1 - mean2), 1))
+
+
+
+
+# 문제1-4 ====
+# 다음은 사람의 키(cm)와 몸무게(kg) 데이터이다.
+# BMI를 아래와 같은 공식으로 구할 수 있다고 할 때
+# 정상에 속하는 사람과 비만에 속하는 사람의 인원 수 차이를
+# 절대값으로 구하시오.
+# 
+# BMI 공식 = 몸무게(kg) / (키(m)의 제곱)
+
+# BMI 지수별 비만도
+# 18.5미만 : 저체중
+# 18.5이상 ~ 23미만 : 정상
+# 23이상 ~ 25미만 : 과체중
+# 25이상 ~ 30미만 : 비만
+# 30이상 : 고도비만
+
+# 데이터 생성
+df <- data.frame(
+  height = c(172, 173, 161, 168, 176, 175, 172, 169, 175, 171, 178, 166, 176, 164, 169, 164, 163, 179, 168, 177, 179, 164, 169, 163, 162, 170, 175, 177, 163, 171),
+  weight = c(77, 70, 89, 90, 63, 85, 80, 78, 83, 66, 53, 85, 50, 55, 96, 75, 95, 100, 92, 90, 50, 89, 81, 71, 65, 96, 70, 95, 54, 62)
+)
+df
+
+
+
+# 1-4풀이 ====
+# BMI 계산
+df <- df %>% mutate(bmi = weight / ((height * 0.01) ^ 2))
+
+# 상위 3개 데이터 출력
+print(df %>% head(3))
+
+# 조건 설정 및 필터링
+cond1 <- df %>% filter(bmi >= 18.5 & bmi < 23)
+cond2 <- df %>% filter(bmi >= 25 & bmi < 30)
+
+# 조건에 맞는 데이터의 개수 차이 계산 및 출력
+diff <- abs(nrow(cond1) - nrow(cond2))
+print(diff)
+
+
+
+
+
+# 문제1-5 ====
+# 다음은 당뇨 진척정도 데이터셋이다.
+# 주어진 변수들 중에 s3 변수와 음의 상관관계가 가장 큰 변수 2개의
+# 상관계수 값을 구하고, 두 상관계수의 차이값을 절대값으로 구하시오.
+# (단, 반올림하여 소수점 첫째자리까지 구하시오)
+
+df = read.csv("data/exam1-5.csv")
+
+
+
+# 1-5풀이 ====
+library(dplyr)
+df = read.csv("data/exam1-5.csv")
+df2 <- cor(df)
+df2 <- as.data.frame(df2)
+
+# 특정 열 's3' 기준으로 정렬
+df3 <- df2 %>% arrange(s3) %>% select(s3)
+
+# 상위 5개 데이터 출력
+print(head(df3, 5))
+
+# 상관계수값의 차이 구하기기
+result <- abs(df3$s3[1] - df3$s3[2])
+print(round(result, 1))
+
+
+
+
+
+# 문제1-6 ====
+# 다음은 wine의 화학조성 데이터셋이다.
+# magnesium 칼럼 값이 이상치를 나타내는 와인들을 선정하고
+# 그 와인들 중에 class가 0인 와인의 비율을 구하시오.
+# (단, 이상치는 Z-score 표준화 후 값이 1.5를 초과하거나 1.5미만인 값이다)
+# (단, 이상치 비율은 반올림하여 소수점 둘째자리 까지 구하시오)
+
+df = read.csv("data/exam1-6.csv")
+
+
+# 1-6풀이 ====
+library(dplyr)
+df = read.csv("data/exam1-6.csv")
+# Z-score 계산
+std <- sd(df$magnesium)
+mean_magnesium <- mean(df$magnesium)
+df <- df %>% mutate(zscore = (magnesium - mean_magnesium) / std)
+
+# 조건 설정 및 필터링
+df2 <- df %>% filter(zscore > 1.5 | zscore < -1.5)
+
+# 조건에 맞는 데이터의 비율 계산
+result <- nrow(df2 %>% filter(class == 0)) / nrow(df2)
+
+# 결과 출력 (반올림하여 소수점 둘째자리까지)
+print(round(result, 2))
+
+
+
+
+# 문제1-7 ====
+# 다음은 와인의 화학 조성 데이터셋이다.
+# ash 칼럼 값이 상자그림 기준으로 이상치를 나타내는 와인들을 선정하고
+# 그 와인들 중에 class가 1인 와인의 비율을 구하시오.
+# (class 컬럼은 0,1,2의 값을 가지며 와인의 종류를 나타냄)
+# (단, 이상치 비율은 반올림하여 소수점 둘째자리 까지 구하시오)
+
+df = read.csv("data/exam1-7.csv")
+
+
+# 1-7풀이 ====
+library(dplyr)
+df = read.csv("data/exam1-7.csv")
+# IQR 계산
+Q1 <- quantile(df$ash, 0.25)
+Q3 <- quantile(df$ash, 0.75)
+IQR <- Q3 - Q1
+
+upper <- Q3 + 1.5 * IQR
+lower <- Q1 - 1.5 * IQR
+
+# 조건 설정 및 필터링
+df2 <- df %>% filter(ash > upper | ash < lower)
+
+# 조건에 맞는 데이터의 비율 계산
+result <- nrow(df2 %>% filter(class == 1)) / nrow(df2)
+
+# 결과 출력 (반올림하여 소수점 둘째자리까지)
+print(round(result, 2))
+
+
+
+
+
+
+# 문제1-8
+# 다음은 시간대별로 생산된 wine의 화학조성 데이터이다.
+# alcohol칼럼의 결측치를 모두 제거하고
+# 첫번째 행부터 순서대로 50%까지의 데이터를 추출하여
+# 24년 1월에 생산한 wine의 alcohol 최소값과
+# 24년 2월에 생산한 wine의 alcohol 최소값의 차이를 절대값으로 구하시오.
+# (단, 정답은 반올림하여 소수점 첫째자리까지 구하시오)
+
+df = read.csv("data/exam1-8.csv")
+
+
+# 1-8풀이 ====
+library(dplyr)
+df = read.csv("data/exam1-8.csv")
+# 결측치 삭제(특정열의 행기준)
+df = df[!is.na(df$alcohol), ]
+
+# 첫 번째 행부터 순서대로 50% 데이터 추출
+per50 <- nrow(df) * 0.5
+df2 <- df[1:per50, ]
+df2 %>% dim()
+# 데이터 타입 변경
+df2$time = as.POSIXct(df2$time)
+
+# 2024년 1월과 2월 생산한 와인의 alcohol 최소값 구하기
+df_1 <- df2 %>% filter(time >= as.POSIXct('2024-01-01 00:00:00') & time <= as.POSIXct('2024-01-31 23:59:59'))
+df_2 <- df2 %>% filter(time >= as.POSIXct('2024-02-01 00:00:00') & time <= as.POSIXct('2024-02-29 23:59:59'))
+
+min1 <- min(df_1$alcohol)
+min2 <- min(df_2$alcohol)
+
+# 결과 출력
+print(min1)
+print(min2)
+print(round(abs(min1 - min2), 1))
+
+
+
+
+
+# 문제1-9 ====
+# 다음은 시간대별로 생산된 wine의 화학조성 데이터이다.
+# 24년 3월에 생산된 wine의 alcohol칼럼의 결측치를
+# 24년 1~2월에 생산한 wine의 alcohol 최소값으로 대체한 후
+# 24년 3월 wine의 alcohol 이상치의 개수를 상자그림 기준으로 구하시오.
+
+df = read.csv("data/exam1-9.csv")
+
+
+# 1-9풀이 ====
+library(dplyr)
+df = read.csv("data/exam1-9.csv")
+# 데이터 타입 변경
+df$time = as.POSIXct(df$time)
+
+# 2024년 1~2월 생산한 와인의 alcohol 최소값 구하기
+df12 <- df %>% filter(time >= as.POSIXct('2024-01-01 00:00:00') & time <= as.POSIXct('2024-02-29 23:59:59'))
+
+# alcohol의 최소값 계산
+alcohol_min <- min(df12$alcohol, na.rm = TRUE)
+print(alcohol_min)
+
+# 2024년 3월 데이터 생성
+df3 <- df %>% filter(time >= as.POSIXct('2024-03-01 00:00:00') & time <= as.POSIXct('2024-03-31 23:59:59'))
+
+# 데이터 복사 후 결측치 대체
+df3_new <- df3 %>% mutate(alcohol = ifelse(is.na(alcohol), alcohol_min, alcohol))
+
+# 결측치 제거 확인
+print(sum(is.na(df3_new$alcohol)))
+
+# 2024년 3월 생산 와인의 이상치 개수 구하기 (상자그림 기준)
+Q1 <- quantile(df3_new$alcohol, 0.25, na.rm = TRUE)
+Q3 <- quantile(df3_new$alcohol, 0.75, na.rm = TRUE)
+IQR <- Q3 - Q1
+
+upper <- Q3 + 1.5 * IQR
+lower <- Q1 - 1.5 * IQR
+
+# 이상치 조건 설정 및 필터링
+cond <- df3_new %>% filter(alcohol > upper | alcohol < lower)
+
+# 이상치 개수 출력
+print(nrow(cond))
+
+

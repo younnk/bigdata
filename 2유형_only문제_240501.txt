@@ -1,0 +1,144 @@
+# 제2유형 연습하기 : 1. wine종류 분류
+
+###### 실기환경 데이터 셋팅(수정금지) ######
+library(dplyr)        # 데이터 전처리
+library(caret)        # 머신러닝 모델링 및 성능평가
+library(randomForest) # 랜덤포레스트 모델링
+library(ModelMetrics) # 모델 성능평가
+
+df = read.csv("wine.csv")
+colnames(df)[colnames(df) == 'X0'] <- 'class' # 종속변수 이름 변경
+
+set.seed(2024) # 랜덤시드고정
+idx <- createDataPartition(df$class, p = 0.8, list = F)
+train = df[idx, ]
+test = df[-idx, ]
+test = test %>% select(-class)
+############################################
+
+### 문제 : 와인의 종류를 분류해보자 ----
+
+### - 데이터의 결측치, 이상치에 대해 처리하고
+### - 분류모델을 사용하여 정확도, F1 score, AUC 값을 산출하시오. 
+### - 제출은 pred 변수에 담아 정해진 양식으로 제출하시오.
+
+
+
+# 제2유형 연습하기 : 2. 당뇨진척정도
+
+###### 실기환경 데이터 셋팅(수정금지) ######
+library(dplyr)        # 데이터 전처리
+library(caret)        # 머신러닝 모델링 및 성능평가
+library(randomForest) # 랜덤포레스트 모델링
+library(ModelMetrics) # 모델 성능평가
+
+df = read.csv("diabetes.csv")
+colnames(df)[colnames(df) == 'X0'] <- 'target' # 종속변수 이름 변경
+df$cust_id = rownames(df)
+
+set.seed(2024) # 랜덤시드고정
+idx <- createDataPartition(df$target, p = 0.8, list = F)
+train = df[idx, ]
+test = df[-idx, ]
+test = test %>% select(-target)
+
+############################################
+
+
+### 문제 : 당뇨병 환자의 질병 진행정도를 예측해보자 ----
+
+### - 데이터의 결측치, 이상치, 변수들에 대해 전처리하고
+### - 회귀모델을 사용하여 Rsq, MSE 값을 산출하시오. 
+### - 제출은 cust_id, target 변수를 가진 csv 파일로 제출하시오.
+
+# 제출 예
+# cust_id target
+#     5     180
+
+
+
+# 제2유형 연습하기 : 3. tip 예측하기(회귀)
+
+###### 실기환경 데이터 셋팅(수정금지) ######
+library(dplyr)        # 데이터 전처리
+library(caret)        # 머신러닝 모델링 및 성능평가
+library(randomForest) # 랜덤포레스트 모델링
+library(ModelMetrics) # 모델 성능평가
+
+df = read.csv("tips.csv")
+
+set.seed(2024) # 랜덤시드고정
+idx <- createDataPartition(y=df$tip, p = 0.8, list = F)
+train = df[idx, ]
+test = df[-idx, ]
+test = test %>% select(-tip)
+
+############################################
+
+### 문제 : 레스토랑의 tip 예측 문제 ----
+
+### - 데이터의 결측치, 이상치에 대해 처리하고
+### - 회귀모델을 사용하여 Rsq, MSE 값을 산출하시오. 
+### - 제출은 pred 변수에 담아 정해진 양식으로 제출하시오.
+
+
+
+# 제2유형 연습하기 : 4. iris 종 분류
+
+###### 실기환경 데이터 셋팅(수정금지) ######
+library(dplyr)        # 데이터 전처리
+library(caret)        # 머신러닝 모델링 및 성능평가
+library(randomForest) # 랜덤포레스트 모델링
+library(ModelMetrics) # 모델 성능평가
+
+df = iris
+df$Species = ifelse(iris$Species == 'setosa', '0', '1') # 이진분류로 셋팅
+df$Species = as.factor(df$Species)
+
+set.seed(2024) # 랜덤시드고정
+idx <- createDataPartition(df$Species, p = 0.8, list = F)
+train = df[idx, ]
+test = df[-idx, ]
+test = test %>% select(-Species)
+# 결측치 삽입
+train[1, 'Sepal.Length'] <- NA
+test[1, 'Sepal.Length'] <- NA  
+
+# 이상치 삽입
+train[1, 'Sepal.Width'] <- 150
+############################################
+
+
+### 문제 : 붓꽃의 종(Species)을 분류해보자 ----
+
+### - 데이터의 결측치, 이상치에 대해 처리하고
+### - 분류모델을 사용하여 정확도, F1 score, AUC 값을 산출하시오. 
+### - 제출은 result 변수에 담아 양식에 맞게 제출하시오
+
+
+
+
+# 제2유형 연습하기 : 5. 타이타닉 생존자 분류
+
+###### 실기환경 데이터 셋팅(수정금지) ######
+library(dplyr)        # 데이터 전처리
+library(caret)        # 머신러닝 모델링 및 성능평가
+library(randomForest) # 랜덤포레스트 모델링
+library(ModelMetrics) # 모델 성능평가
+
+df = read.csv("titanic.csv")
+
+set.seed(2024) # 랜덤시드고정
+idx <- createDataPartition(df$survived, p = 0.8, list = F)
+train = df[idx, ]
+test = df[-idx, ]
+y_test = test$survived # 평가용(실제 시험에서는 주어지지 않음)
+test = test %>% select(-survived)
+
+############################################
+
+### 문제 : 타이타닉 생존자 예측 문제 ----
+
+### - 데이터의 결측치, 중복변수로 지정된 변수값에 대해 처리하고
+### - 분류모델을 사용하여 Accuracy, F1 score, AUC 값을 산출하시오. 
+### - 제출은 pred 변수에 담아 양식에 맞게 제출하시오.

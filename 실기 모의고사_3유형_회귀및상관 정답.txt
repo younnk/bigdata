@@ -1,0 +1,168 @@
+# 회귀 및 상관분석 ====
+
+# 다중회귀분석 ====
+# 다음은 당뇨병 진척정도 데이터셋이다. 아래 물음에 답하시오.
+
+df = read.csv("data/exam3-1.csv")
+
+
+# 문제3-1.====
+# target 칼럼(종속변수)과 상관관계가 높은 독립변수 3개를 구하시오.
+# (단, 상관분석은 피어슨 상관분석으로 진행하시오)
+
+
+# 문제3-2.====
+# 3-1 에서 구한 3개의 독립변수를 가지고 다중회귀분석을 실시하고
+# 아래 성능지표 5가지 값들을 구하시오.
+# 성능지표 : Rsq(결정계수), Rsq-adj(수정결정계수), MSE, AIC값을 구하시오.
+# (단, 초기 200개 데이터를 사용하시오)
+# (단, 정답은 반올림하여 소수점 셋째자리까지 구하시오)
+
+
+# 문제 3-3.====
+# 3-2 에서 구한 회귀 모델에 나머지 242개의 데이터를 적용하여
+# Rsq, MSE 값을 구하시오.
+# (단, 정답은 반올림하여 소수점 셋째자리까지 구하시오)
+
+
+
+# 3-1풀이 ====
+library(dplyr)
+df = read.csv("data/exam3-1.csv")
+
+# 풀이
+result = cor(df)
+# print(result)
+
+df_new = data.frame(result)
+print( df_new %>% abs() %>% arrange(-target) %>% select(target))
+# 정답 : bmi, s5, bp
+
+
+# 3-2풀이 ====
+# 데이터 분리
+train <- df[1:200, ]
+test <- df[201:442, ]
+
+# 회귀식 모델링
+# 다중선형회귀 : lm(y~x1+x2..., data= )
+model = lm(target ~ bmi+s5+bp, data=train)
+print( summary(model) )
+train_pred = predict(model)
+
+# MSE 구하기
+library(ModelMetrics)
+# 예측값
+y_pred = predict(model)
+print( mse(train$target, y_pred) )      # ModelMetrics::mse(actual, predicted)
+print( mean((train$target-y_pred)**2) ) # 직접구하기
+
+# AIC 구하기
+print( AIC(model) )
+
+# 정답
+# Rsq(결정계수) : 0.443
+# Rsq-adj(수정결정계수) : 0.434
+# MSE : 3090.982
+# AIC : 2182.824 
+
+
+
+# 3-3풀이 ====
+# 모델을 사용하여 테스트 데이터 예측
+x_test = test %>% select(-target)
+y_pred = predict(model, x_test)
+
+# MSE값 : 3122.061
+print( mean((test$target-y_pred)**2) ) # 직접구하기
+
+
+
+
+# 로지스틱회귀분석 ====
+# 다음은 유방암 진단 데이터셋이다. 아래 물음에 답하시오.
+
+df = read.csv("data/exam3-2.csv")
+
+
+
+# 문제 3-4. ====
+# 주어진 데이터셋에서 class 칼럼을 target 변수로 하여
+# 로지스틱 회귀분석을 실시하고 residual deviance값을 구하시오.
+# (단, 초기 400개의 데이터를 사용하시오)
+# (단, 정답은 반올림하여 소수점 둘째자리까지 구하시오)
+
+
+# 문제 3-5. ====
+# 문제 3-4의 로지스틱 회귀모형에서 mean_perimeter 변수가 한단위 증가할 때
+# 양성일 오즈가 몇 배 증가하는지 반올림하여 소수점 둘째 자리까지 구하시오.
+
+
+# 문제 3-6. ====
+# 3-4에서 학습한 모델에 나머지 169개 데이터를 적용하여
+# 정확도(accuracy), F1 score값을 구하시오.
+# (단, 정답은 반올림하여 소수점 둘째자리까지 구하시오)
+
+
+
+
+
+# 3-4풀이 ====
+library(dplyr)
+df = read.csv("data/exam3-2.csv")
+# 데이터 분리
+train <- df[1:400, ]
+test <- df[401:569, ]
+
+
+# 로지스틱회귀 : glm(y~x1+x2..., data=  , famaily = binomial)
+model = glm(class ~. , data = train, family = binomial)
+print(summary(model))
+# Residual deviance: 177.40
+
+
+# 3-5풀이 ====
+# mean_perimeter 변수가 한단위 증가할 때
+# 양성일 오즈가 몇 배 증가하는지 반올림하여 소수점 둘째 자리까지 구하시오.
+odds_ratio = exp(model$coefficients)
+print ( odds_ratio )
+print ( round(odds_ratio[3], 2) )
+# 정답 : 0.63
+
+# 해석 : mean_perimeter 변수가 한 단위 증가할 때 양성일 오즈가 0.63배 증가한다. 
+#       양성일 오즈가 37% 감소한다. (양성일 확률이 감소한다)
+
+
+# 3-6풀이 ====
+# 3-4에서 학습한 모델에 나머지 169개 데이터를 적용하여
+# 정확도(accuracy) 구하기
+
+# 예측하기
+model = glm(class ~. , data = train, family = binomial)
+
+x_test = test %>% select(-class)
+y_pred = predict(model, x_test, type='response') # 주의 : type='response'
+print(y_pred)
+
+y_pred_class = ifelse(y_pred > 0.5, 1, 0) 
+print(y_pred_class)
+
+# 모델 성능 평가 (accuracy)
+library(caret)
+
+# confusionMatrix(예측값, 실제값)
+# 주의 : factor 형태로 들어가야함
+cm = caret::confusionMatrix(as.factor(y_pred_class), as.factor(test$class))
+?confusionMatrix
+print(cm)
+# 정확도 : 0.86
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,148 @@
+# 가설검정 ====
+# 문제 1====
+# 다음은 A그룹과 B그룹 인원의 키 데이터이다.
+# 두 그룹의 키 평균이 다르다고 할 수 있는지
+# 가설검정을 실시하고자 한다. 아래 물음에 답하시오(유의수준 1%)
+# 
+# A : A그룹 인원의 키 평균, B : B그룹 인원의 키 평균
+# H0(귀무가설) : A = B
+# H1(대립가설) : A ≠ B
+
+# 데이터 생성
+height <- c(172, 175, 173, 174, 177, 170, 169, 178, 171, 176,  # Group A
+            168, 165, 171, 169, 170, 174, 171, 171, 168, 175) # Group B
+group <- c(rep('A', 10), rep('B', 10))
+df <- data.frame(Height = height, Group = group)
+df
+
+
+
+# 문제 1-1 ====
+# 독립표본 t검정을 실시하고 검정통계량, p-value 값을 구하시오.
+# 정답은 반올림하여 소수점 셋째자리까지 구하시오
+# (단, 두 그룹의 데이터는 정규성은 만족하지만, 등분산성은 만족하지 못한다고 가정한다)
+
+# 문제 1-2 ====
+# 귀무가설 기각여부를 결정하시오(답은 채택 또는 기각으로 작성하시오)
+
+
+
+# 1-1풀이 ====
+library(dplyr)
+# 독립표본 t-검정 수행
+result <- t.test(Height ~ Group, data = df, 
+                 var.equal = FALSE, 
+                 alternative = "two.sided")
+
+# t 통계량과 p-value 출력
+print(result)
+cat(round(result$statistic, 3))
+cat(round(result$p.value, 3))
+
+
+# 1-2풀이 ====
+# 유의수준 1% 하에서 p-value값이 0.024 이므로(>0.01) 귀무가설을 채택한다.
+# 정답 : 채택
+
+
+
+
+# 문제 2 ====
+# 다음은 A, B, C 그룹 인원의 영어 성적 데이터이다.
+# 세 그룹의 성적 평균이 같다고 할 수 있는지 ANOVA 분석을 실시하시오.
+# (유의수준 5%)
+# 
+# A, B, C : 각 그룹 인원의 성적
+# H0(귀무가설) : A(평균) = B(평균) = C(평균)
+# H1(대립가설) : Not H0 (적어도 하나는 같지 않다)
+
+
+# 데이터 생성
+english_score <- c(82, 84, 83, 85, 86, 87, 85, 84, 86, 88,  # Group A
+                   78, 77, 79, 76, 75, 77, 78, 79, 80, 76,  # Group B
+                   81, 83, 82, 84, 85, 83, 84, 82, 85, 86)  # Group C
+group <- c(rep('A', 10), rep('B', 10), rep('C', 10))
+df <- data.frame(English_Score = english_score, Group = group)
+df
+
+
+# 문제 2-1 ====
+# ANOVA 분석을 실시하고 검정통계량, p-value 값을 구하시오.
+# 정답은 반올림하여 소수점 셋째자리까지 구하시오
+# (단, 각 그룹의 데이터는 정규성, 등분산성을 만족한다고 가정한다)
+
+# 문제 2-2 ====
+# 귀무가설 기각여부를 결정하시오(답은 채택 또는 기각으로 작성하시오)
+
+
+
+# 2-1풀이 ====
+library(dplyr)
+# 집단별 데이터 추출
+group_a <- df %>% filter(Group == 'A') %>% select(English_Score)
+group_b <- df %>% filter(Group == 'B') %>% select(English_Score)
+group_c <- df %>% filter(Group == 'C') %>% select(English_Score)
+
+# 분산분석 수행
+anova_result <- aov(English_Score ~ Group, data = df)
+
+# ANOVA 결과 요약 출력
+summary(anova_result)
+
+# 검정통계량F = 56.7, p-value = 0.00
+
+
+# 2-2풀이 ====
+# 유의수준 5% 하에서 p-value값이 0.0 이므로(<0.05) 귀무가설을 기각한다.
+# 정답 : 기각
+
+
+
+# 문제 3 ====
+# 어느 그룹에서 성별에 따라 선택한 스포츠가 관련성이 있는지
+# 검정해보고자 한다. 두 변수(Sport, Gender)의 독립성 검정을 실시하시오.
+# (유의수준 5%)
+# . Gender : Male, Female
+# . Sport : Soccer, Basketball, Swimming
+# 
+# H0(귀무가설) : 두 변수는 서로 독립이다
+# H1(대립가설) : 두 변수는 서로 독립이 아니다
+
+# 데이터 생성
+sport <- c(rep('Soccer', 35), rep('Basketball', 55), rep('Swimming', 60))
+gender <- c(rep('Male', 20), rep('Female', 15), rep('Male', 30), rep('Female', 25), rep('Male', 25), rep('Female', 35))
+df <- data.frame(Sport = sport, Gender = gender)
+df
+
+
+
+# 문제 3-1 ====
+# 카이제곱검정(독립성검정)을 실시하고 검정통계량, p-value 값을 구하시오.
+# 정답은 반올림하여 소수점 셋째자리까지 구하시오
+
+
+# 문제 3-2 ====
+# 귀무가설 기각여부를 결정하시오(답은 채택 또는 기각으로 작성하시오)
+
+
+# 3-1풀이 ====
+# 교차표 생성
+cross_tab <- table(df$Gender, df$Sport)
+print(cross_tab)
+
+# 카이제곱 검정 수행
+result <- chisq.test(cross_tab)
+print(result)
+
+print(result$statistic) # 통계량
+print(result$p.value)   # p-value
+print(result$expected)  # 기대빈도
+print(result$parameter) # 자유도 = (행-1)*(열-1)
+
+# 정답 : 검정통계량 = 2.835, p-value = 0.242
+
+
+# 3-2풀이====
+# 유의수준 5% 하에서 p-value값이 0.242 이므로(>0.05) 귀무가설을 채택한다.
+# 정답 : 채택
+
